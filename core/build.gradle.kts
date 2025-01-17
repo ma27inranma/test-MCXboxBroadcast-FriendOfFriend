@@ -14,6 +14,9 @@ dependencies {
     api(libs.ice4j)
     api(libs.bundles.bouncycastle)
     api(libs.sctp4j)
+
+    api(libs.bundles.geyser)
+    // api(files("G:/storage/projects/files/Geyser-Spigot.jar"))
 }
 
 sourceSets {

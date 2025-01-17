@@ -2,6 +2,7 @@ package com.rtm516.mcxboxbroadcast.core.webrtc;
 
 import com.rtm516.mcxboxbroadcast.core.Logger;
 import com.rtm516.mcxboxbroadcast.core.SessionInfo;
+import com.rtm516.mcxboxbroadcast.core.webrtc.bedrock.GeyserPacketHandler;
 import com.rtm516.mcxboxbroadcast.core.webrtc.bedrock.RedirectPacketHandler;
 import com.rtm516.mcxboxbroadcast.core.webrtc.compression.CompressionHandler;
 import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncoder;
@@ -27,7 +28,7 @@ public class MinecraftDataHandler implements SCTPByteStreamListener {
     private final SCTPStream sctpStream;
     private final BedrockCodec codec;
     private final BedrockCodecHelper helper;
-    private final RedirectPacketHandler redirectPacketHandler;
+    private final GeyserPacketHandler redirectPacketHandler;
     private final Logger logger;
 
     private CompressionHandler compressionHandler;
@@ -42,7 +43,8 @@ public class MinecraftDataHandler implements SCTPByteStreamListener {
         this.helper = codec.createHelper();
         this.logger = logger.prefixed("MinecraftDataHandler");
 
-        this.redirectPacketHandler = new RedirectPacketHandler(this, sessionInfo);
+        // this.redirectPacketHandler = new RedirectPacketHandler(this, sessionInfo);
+        this.redirectPacketHandler = new GeyserPacketHandler(this, sessionInfo);
     }
 
     @Override
