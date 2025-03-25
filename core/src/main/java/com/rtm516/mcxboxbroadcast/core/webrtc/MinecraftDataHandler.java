@@ -30,6 +30,7 @@ public class MinecraftDataHandler implements SCTPByteStreamListener {
     private final BedrockCodecHelper helper;
     private final GeyserPacketHandler redirectPacketHandler;
     private final Logger logger;
+    private final String sctpStreamLabel;
 
     private CompressionHandler compressionHandler;
     private BedrockEncryptionEncoder encryptionEncoder;
@@ -37,11 +38,12 @@ public class MinecraftDataHandler implements SCTPByteStreamListener {
     private ByteBuf concat;
     private int expectedLength;
 
-    public MinecraftDataHandler(SCTPStream sctpStream, BedrockCodec codec, SessionInfo sessionInfo, Logger logger) {
+    public MinecraftDataHandler(SCTPStream sctpStream, BedrockCodec codec, SessionInfo sessionInfo, Logger logger, String sctpStreamLabel) {
         this.sctpStream = sctpStream;
         this.codec = codec;
         this.helper = codec.createHelper();
         this.logger = logger.prefixed("MinecraftDataHandler");
+        this.sctpStreamLabel = sctpStreamLabel;
 
         // this.redirectPacketHandler = new RedirectPacketHandler(this, sessionInfo);
         this.redirectPacketHandler = new GeyserPacketHandler(this, sessionInfo);
@@ -187,5 +189,17 @@ public class MinecraftDataHandler implements SCTPByteStreamListener {
 
     public void enableEncryption(SecretKey secretKey) {
         encryptionEncoder = new BedrockEncryptionEncoder(secretKey, EncryptionUtils.createCipher(true, true, secretKey));
+    }
+
+    public String getSctpStreamLabel() {
+        return sctpStreamLabel;
+    }
+
+    public SCTPStream getSctpStream() {
+        return sctpStream;
+    }
+
+    public BedrockCodec getCodec() {
+        return codec;
     }
 }

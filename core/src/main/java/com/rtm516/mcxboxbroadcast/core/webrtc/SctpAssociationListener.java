@@ -36,7 +36,7 @@ public class SctpAssociationListener implements AssociationListener {
         logger.debug("Received DCEP SCTP stream: " + sctpStream.toString());
 
         if ("ReliableDataChannel".equals(label)) {
-            sctpStream.setSCTPStreamListener(new MinecraftDataHandler(sctpStream, Constants.BEDROCK_CODEC, sessionInfo, logger));
+            sctpStream.setSCTPStreamListener(new MinecraftDataHandler(sctpStream, Constants.BEDROCK_CODEC, sessionInfo, logger, label));
         }
     }
 
