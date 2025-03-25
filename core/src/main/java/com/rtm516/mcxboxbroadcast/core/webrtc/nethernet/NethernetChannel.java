@@ -1,5 +1,6 @@
 package com.rtm516.mcxboxbroadcast.core.webrtc.nethernet;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.unix.PreferredDirectByteBufAllocator;
@@ -10,8 +11,15 @@ import pe.pi.sctp4j.sctp.SCTPStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketDefinition;
 import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketType;
+import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
 import org.geysermc.geyser.network.netty.DefaultChannelPipelinePublic;
+import org.geysermc.geyser.session.GeyserSession;
+
+import com.rtm516.mcxboxbroadcast.core.webrtc.MinecraftDataHandler;
 
 public class NethernetChannel implements Channel {
   public NethernetChannel(SCTPStream sctpStream, EventLoop eventLoop){
@@ -24,6 +32,9 @@ public class NethernetChannel implements Channel {
 
   public SCTPStream sctpStream;
   public EventLoop eventLoop;
+
+  public GeyserSession session;
+  public MinecraftDataHandler dataHandler;
 
   public ByteBufAllocator allocator;
   public ChannelPipeline pipeline;
@@ -167,15 +178,33 @@ public class NethernetChannel implements Channel {
 
   @Override
   public ChannelFuture write(Object o) {
-    System.out.println("write!");
+    System.out.println("write! " + o.getClass().getSimpleName());
 
     if(!(o instanceof BedrockPacketWrapper bedrockPacket)){
       System.out.println("not a bedrock packet");
       return null;
     }
 
+    BedrockPacket packet = bedrockPacket.getPacket();
+
+    System.out.println("packet " + packet.toString());
+
+    if(packet instanceof ServerToClientHandshakePacket serverToClientHandshake){
+      // this.dataHandler.enableEncryption(serverToClientHandshake.);
+    }
+
     try{
-      sctpStream.send(bedrockPacket.getPacketBuffer().array());
+      // BedrockPacketDefinition<BedrockPacket> packetDefinition = (BedrockPacketDefinition<BedrockPacket>) this.session.getUpstream().getSession().getCodec().getPacketDefinition(bedrockPacket.getPacket().getClass());
+
+      // ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
+      // packetDefinition.getSerializer().serialize(buf, this.session.getUpstream().getCodecHelper(), bedrockPacket.getPacket());
+
+      // // sctpStream.send(bedrockPacket.getPacketBuffer().array());
+      // byte[] bytes = new byte[buf.readableBytes()];
+      // buf.readBytes(bytes);
+      // sctpStream.send(bytes);
+
+      this.dataHandler.sendPacket(bedrockPacket.getPacket());
     }catch(Exception e){
       e.printStackTrace();
     }

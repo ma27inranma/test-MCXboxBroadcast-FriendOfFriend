@@ -37,6 +37,7 @@ import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.data.PlayerPermission;
 import org.cloudburstmc.protocol.bedrock.data.SpawnBiomeType;
 import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
+import org.cloudburstmc.protocol.bedrock.netty.codec.batch.BedrockBatchDecoder;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.*;
@@ -1282,7 +1283,10 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
         BedrockPacketCodec_v3 packetCodec = new BedrockPacketCodec_v3();
         packetCodec.setCodec(Constants.BEDROCK_CODEC);
 
+        BedrockBatchDecoder decoder = new BedrockBatchDecoder();
+
         channel.pipeline().addLast("bedrock-packet-codec", packetCodec);
+        channel.pipeline().addLast("bedrock-batch-decoder", decoder);
 
         GeyserBedrockPeer peer = new GeyserBedrockPeer(channel, NethernetBedrockSessionFactory.Instance);
         // BedrockServerSession session = new BedrockServerSession(peer, 0);
@@ -1293,11 +1297,17 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
         GeyserSession geyserSession = new GeyserSession(GeyserImpl.getInstance(), session, eventLoop);
         // geyserSession.connect();
 
+        channel.session = geyserSession; 
+        channel.dataHandler = this.dataHandler;
+
         GeyserImpl.getInstance().getSessionManager().addSession(UUID.randomUUID(), geyserSession);
 
         System.out.println("created!");
 
         sendPacketToGeyser(packet);
+
+        PacketCompressionAlgorithm algorithm = PacketCompressionAlgorithm.ZLIB;
+        dataHandler.enableCompression(algorithm, 512);
 
         return PacketSignal.HANDLED;
     }
