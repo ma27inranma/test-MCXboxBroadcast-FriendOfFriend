@@ -24,7 +24,8 @@ import org.geysermc.geyser.network.netty.DefaultChannelPipelinePublic;
 import org.geysermc.geyser.session.GeyserSession;
 
 import com.rtm516.mcxboxbroadcast.core.webrtc.MinecraftDataHandler;
-import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncoder;
+// import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncoder;
+import org.cloudburstmc.protocol.bedrock.netty.codec.encryption.BedrockEncryptionEncoder;
 
 public class NethernetChannel implements Channel {
   public NethernetChannel(SCTPStream sctpStream, EventLoop eventLoop){
@@ -197,6 +198,7 @@ public class NethernetChannel implements Channel {
     if(packet instanceof ServerToClientHandshakePacket serverToClientHandshake){
       /*
        * encryption not enabled?
+       * yes it is enabled
       */
 
       Thread vThread = Thread.startVirtualThread(() -> {
@@ -217,9 +219,10 @@ public class NethernetChannel implements Channel {
         }catch(Throwable t){
             t.printStackTrace();
         }
+
+        // this.session.connect();
       });
       vThread.setName("timeout-handshake");
-      vThread.start();
     }
 
     try{

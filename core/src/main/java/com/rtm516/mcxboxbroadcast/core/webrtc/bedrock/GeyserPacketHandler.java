@@ -8,6 +8,7 @@ import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncode
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockServerSession;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockSessionFactory;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetChannel;
+import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NullChannelOutboundHandler;
 
 import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
@@ -117,6 +118,16 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
     }
 
     public void sendPacketToGeyser(BedrockPacket packet) {
+        /*
+        TODO:
+        [19:10:30 INFO]: [STDOUT] [com.rtm516.mcxboxbroadcast.core.webrtc.bedrock.GeyserPacketHandler] GeyserPacketHandler.sendPacketToGeyser /127.0.0.1:1234
+        [19:10:30 INFO]: [STDOUT] [com.rtm516.mcxboxbroadcast.core.webrtc.bedrock.GeyserPacketHandler] org.geysermc.geyser.network.CodecProcessor$2
+        [19:10:30 INFO]: [Geyser-Spigot] Could not find packet for ClientToServerHandshakePacket **<< What is this**
+        [19:10:30 INFO]: org.cloudburstmc.protocol.bedrock.netty.codec.encryption.BedrockEncryptionEncoder@71907cc8
+        [19:10:31 INFO]: [Geyser-Spigot] /127.0.0.1:64084 が ping しました！
+        [19:10:31 INFO]: [Geyser-Spigot] Error while getting Paper ping passthrough: java.lang.NoSuchMethodError: 
+         */
+
         System.out.println("GeyserPacketHandler.sendPacketToGeyser " + packet.getClass().getSimpleName());
 
         for(GeyserSession session : GeyserImpl.getInstance().getSessionManager().getSessions().values()){
@@ -1292,6 +1303,7 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
         BedrockBatchDecoder decoder = new BedrockBatchDecoder();
 
+        channel.pipeline().addLast("frame-id-codec", new NullChannelOutboundHandler()); // to fake
         channel.pipeline().addLast("bedrock-packet-codec", packetCodec);
         channel.pipeline().addLast("bedrock-batch-decoder", decoder);
 
