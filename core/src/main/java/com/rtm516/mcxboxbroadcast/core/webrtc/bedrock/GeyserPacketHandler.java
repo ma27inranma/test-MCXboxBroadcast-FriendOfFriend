@@ -4,6 +4,7 @@ import com.rtm516.mcxboxbroadcast.core.Constants;
 import com.rtm516.mcxboxbroadcast.core.SessionInfo;
 import com.rtm516.mcxboxbroadcast.core.webrtc.MinecraftDataHandler;
 import com.rtm516.mcxboxbroadcast.core.webrtc.Utils;
+import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncoder;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockServerSession;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockSessionFactory;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetChannel;
@@ -15,7 +16,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoop;
 import io.netty.channel.nio.NioEventLoopGroup;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
+
+import javax.crypto.SecretKey;
+
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -38,6 +43,7 @@ import org.cloudburstmc.protocol.bedrock.data.PlayerPermission;
 import org.cloudburstmc.protocol.bedrock.data.SpawnBiomeType;
 import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
 import org.cloudburstmc.protocol.bedrock.netty.codec.batch.BedrockBatchDecoder;
+import org.cloudburstmc.protocol.bedrock.netty.codec.encryption.BedrockEncryptionDecoder;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.*;
@@ -52,6 +58,7 @@ import org.geysermc.geyser.session.GeyserSession;
 public class GeyserPacketHandler implements BedrockPacketHandler {
     private final MinecraftDataHandler dataHandler;
     private final SessionInfo sessionInfo;
+    private GeyserSession session;
 
     /**
      * In Protocol V554 and above, RequestNetworkSettingsPacket is sent before LoginPacket.
@@ -1296,6 +1303,8 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
         GeyserSession geyserSession = new GeyserSession(GeyserImpl.getInstance(), session, eventLoop);
         // geyserSession.connect();
+
+        this.session = geyserSession;
 
         channel.session = geyserSession; 
         channel.dataHandler = this.dataHandler;

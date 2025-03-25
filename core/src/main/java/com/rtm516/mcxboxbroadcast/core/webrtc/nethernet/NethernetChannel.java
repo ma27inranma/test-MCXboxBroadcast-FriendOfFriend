@@ -8,11 +8,15 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import pe.pi.sctp4j.sctp.SCTPStream;
 
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import javax.crypto.SecretKey;
+
 import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketDefinition;
 import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
+import org.cloudburstmc.protocol.bedrock.netty.codec.encryption.BedrockEncryptionDecoder;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketType;
 import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
@@ -20,6 +24,7 @@ import org.geysermc.geyser.network.netty.DefaultChannelPipelinePublic;
 import org.geysermc.geyser.session.GeyserSession;
 
 import com.rtm516.mcxboxbroadcast.core.webrtc.MinecraftDataHandler;
+import com.rtm516.mcxboxbroadcast.core.webrtc.encryption.BedrockEncryptionEncoder;
 
 public class NethernetChannel implements Channel {
   public NethernetChannel(SCTPStream sctpStream, EventLoop eventLoop){
@@ -190,7 +195,31 @@ public class NethernetChannel implements Channel {
     System.out.println("packet " + packet.toString());
 
     if(packet instanceof ServerToClientHandshakePacket serverToClientHandshake){
-      // this.dataHandler.enableEncryption(serverToClientHandshake.);
+      /*
+       * encryption not enabled?
+      */
+
+      Thread vThread = Thread.startVirtualThread(() -> {
+        try{
+          Thread.sleep(45);
+        }catch(InterruptedException e){
+          e.printStackTrace();
+        }
+
+        BedrockEncryptionEncoder encoder = (BedrockEncryptionEncoder) this.session.getUpstream().getSession().getPeer().getChannel().pipeline().get("bedrock-encryption-encoder");
+        System.out.println(encoder);
+
+        try{
+          Field privateKeyField = BedrockEncryptionEncoder.class.getDeclaredField("key");
+          privateKeyField.setAccessible(true);
+
+          this.dataHandler.enableEncryption((SecretKey) privateKeyField.get(encoder));
+        }catch(Throwable t){
+            t.printStackTrace();
+        }
+      });
+      vThread.setName("timeout-handshake");
+      vThread.start();
     }
 
     try{
