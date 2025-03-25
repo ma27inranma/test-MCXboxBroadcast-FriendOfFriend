@@ -4,9 +4,13 @@ import com.rtm516.mcxboxbroadcast.core.Constants;
 import com.rtm516.mcxboxbroadcast.core.SessionInfo;
 import com.rtm516.mcxboxbroadcast.core.webrtc.MinecraftDataHandler;
 import com.rtm516.mcxboxbroadcast.core.webrtc.Utils;
+import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockServerSession;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetBedrockSessionFactory;
 import com.rtm516.mcxboxbroadcast.core.webrtc.nethernet.NethernetChannel;
 
+import io.netty.buffer.AbstractByteBufAllocator;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoop;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -21,6 +25,7 @@ import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.codec.BaseBedrockCodecHelper;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
+import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.codec.v766.BedrockCodecHelper_v766;
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode;
 import org.cloudburstmc.protocol.bedrock.data.ChatRestrictionLevel;
@@ -31,6 +36,7 @@ import org.cloudburstmc.protocol.bedrock.data.GameType;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.data.PlayerPermission;
 import org.cloudburstmc.protocol.bedrock.data.SpawnBiomeType;
+import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec;
 import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v3;
 import org.cloudburstmc.protocol.bedrock.packet.*;
@@ -108,7 +114,16 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
         for(GeyserSession session : GeyserImpl.getInstance().getSessionManager().getSessions().values()){
             System.out.println("GeyserPacketHandler.sendPacketToGeyser " + session.getUpstream().getAddress());
 
-            // session.getDownstream().sendPacket(packet);
+            int packetId = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getId(); // has serializer?
+
+            ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
+            BedrockPacketSerializer serializer = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getSerializer();
+            System.out.println(serializer.getClass().getName());
+
+            serializer.serialize(buffer, session.getUpstream().getSession().getCodec().createHelper(), packet);
+
+            BedrockPacketWrapper packetWrapper = BedrockPacketWrapper.create(packetId, 0, 0, packet, buffer);
+            ((NethernetBedrockServerSession) session.getUpstream().getSession()).receiveClientPacket(packetWrapper);
         }
     }
 
@@ -1253,6 +1268,12 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
     }
 
     public PacketSignal handle(RequestNetworkSettingsPacket packet) {
+        /*
+         * BedrockServerSession <- BedrockSession#onPacket (protected)
+         * need to extend BedrockServerSession to use onPacket
+         * done
+        */
+
         EventLoop eventLoop = new NioEventLoopGroup().next();
         NethernetChannel channel = new NethernetChannel(dataHandler.getSctpStream(), eventLoop);
         // channel.pipeline().addLast(BedrockPacketCodec.NAME, dataHandler.getCodec().getClass());
@@ -1264,7 +1285,8 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
         channel.pipeline().addLast("bedrock-packet-codec", packetCodec);
 
         GeyserBedrockPeer peer = new GeyserBedrockPeer(channel, NethernetBedrockSessionFactory.Instance);
-        BedrockServerSession session = new BedrockServerSession(peer, 0);
+        // BedrockServerSession session = new BedrockServerSession(peer, 0);
+        NethernetBedrockServerSession session = new NethernetBedrockServerSession(peer, 0);
 
         new GeyserServerInitializer(GeyserImpl.getInstance()).initSession(session);
 

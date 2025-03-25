@@ -167,7 +167,10 @@ public class NethernetChannel implements Channel {
 
   @Override
   public ChannelFuture write(Object o) {
+    System.out.println("write!");
+
     if(!(o instanceof BedrockPacketWrapper bedrockPacket)){
+      System.out.println("not a bedrock packet");
       return null;
     }
 
@@ -197,6 +200,7 @@ public class NethernetChannel implements Channel {
 
   @Override
   public Channel flush() {
+    System.out.println("flush!");
     return this;
   }
 
