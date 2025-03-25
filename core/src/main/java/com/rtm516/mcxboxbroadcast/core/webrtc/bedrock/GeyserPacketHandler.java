@@ -54,6 +54,11 @@ import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.network.GeyserBedrockPeer;
 import org.geysermc.geyser.network.GeyserServerInitializer;
 import org.geysermc.geyser.network.UpstreamPacketHandler;
+import org.geysermc.geyser.registry.BlockRegistries;
+import org.geysermc.geyser.registry.Registries;
+import org.geysermc.geyser.registry.populator.ItemRegistryPopulator;
+import org.geysermc.geyser.registry.type.BlockMappings;
+import org.geysermc.geyser.registry.type.ItemMappings;
 import org.geysermc.geyser.session.GeyserSession;
 
 public class GeyserPacketHandler implements BedrockPacketHandler {
@@ -130,20 +135,16 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
         System.out.println("GeyserPacketHandler.sendPacketToGeyser " + packet.getClass().getSimpleName());
 
-        for(GeyserSession session : GeyserImpl.getInstance().getSessionManager().getSessions().values()){
-            System.out.println("GeyserPacketHandler.sendPacketToGeyser " + session.getUpstream().getAddress());
+        int packetId = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getId(); // has serializer?
 
-            int packetId = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getId(); // has serializer?
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
+        BedrockPacketSerializer serializer = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getSerializer();
+        System.out.println(serializer.getClass().getName());
 
-            ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
-            BedrockPacketSerializer serializer = session.getUpstream().getSession().getCodec().getPacketDefinition(packet.getClass()).getSerializer();
-            System.out.println(serializer.getClass().getName());
+        serializer.serialize(buffer, session.getUpstream().getSession().getCodec().createHelper(), packet);
 
-            serializer.serialize(buffer, session.getUpstream().getSession().getCodec().createHelper(), packet);
-
-            BedrockPacketWrapper packetWrapper = BedrockPacketWrapper.create(packetId, 0, 0, packet, buffer);
-            ((NethernetBedrockServerSession) session.getUpstream().getSession()).receiveClientPacket(packetWrapper);
-        }
+        BedrockPacketWrapper packetWrapper = BedrockPacketWrapper.create(packetId, 0, 0, packet, buffer);
+        ((NethernetBedrockServerSession) session.getUpstream().getSession()).receiveClientPacket(packetWrapper);
     }
 
     public PacketSignal handle(AdventureSettingsPacket packet) {
@@ -207,6 +208,8 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
     }
 
     public PacketSignal handle(ClientToServerHandshakePacket packet) {
+        System.out.println("" + session.getAuthData());
+
         sendPacketToGeyser(packet);
 
         return PacketSignal.HANDLED;
@@ -345,6 +348,9 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
     }
 
     public PacketSignal handle(LoginPacket packet) {
+        this.session.setBlockMappings((BlockMappings)BlockRegistries.BLOCKS.forVersion(packet.getProtocolVersion()));
+        this.session.setItemMappings((ItemMappings)Registries.ITEMS.forVersion(packet.getProtocolVersion()));
+
         sendPacketToGeyser(packet);
 
         return PacketSignal.HANDLED;
@@ -454,6 +460,8 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
     public PacketSignal handle(ResourcePackClientResponsePacket packet) {
         sendPacketToGeyser(packet);
+
+        this.session.connect();
 
         return PacketSignal.HANDLED;
     }
@@ -1329,6 +1337,12 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
         PacketCompressionAlgorithm algorithm = PacketCompressionAlgorithm.ZLIB;
         dataHandler.enableCompression(algorithm, 512);
+
+        try{
+            this.session.getUpstream().getSession().getPeer().channelActive(null); // to tick packet queue
+        }catch(Throwable t){
+            t.printStackTrace();
+        }
 
         return PacketSignal.HANDLED;
     }

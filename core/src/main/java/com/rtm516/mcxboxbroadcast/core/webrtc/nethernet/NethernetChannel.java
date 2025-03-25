@@ -9,6 +9,7 @@ import io.netty.util.AttributeKey;
 import pe.pi.sctp4j.sctp.SCTPStream;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -19,6 +20,7 @@ import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
 import org.cloudburstmc.protocol.bedrock.netty.codec.encryption.BedrockEncryptionDecoder;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketType;
+import org.cloudburstmc.protocol.bedrock.packet.GameRulesChangedPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
 import org.geysermc.geyser.network.netty.DefaultChannelPipelinePublic;
 import org.geysermc.geyser.session.GeyserSession;
@@ -184,7 +186,7 @@ public class NethernetChannel implements Channel {
 
   @Override
   public ChannelFuture write(Object o) {
-    System.out.println("write! " + o.getClass().getSimpleName());
+    // System.out.println("write! " + o.getClass().getSimpleName());
 
     if(!(o instanceof BedrockPacketWrapper bedrockPacket)){
       System.out.println("not a bedrock packet");
@@ -193,7 +195,7 @@ public class NethernetChannel implements Channel {
 
     BedrockPacket packet = bedrockPacket.getPacket();
 
-    System.out.println("packet " + packet.toString());
+    System.out.println("packet " + packet.getPacketType());
 
     if(packet instanceof ServerToClientHandshakePacket serverToClientHandshake){
       /*
@@ -223,6 +225,20 @@ public class NethernetChannel implements Channel {
         // this.session.connect();
       });
       vThread.setName("timeout-handshake");
+    }else if(packet instanceof GameRulesChangedPacket gamerulePacket){
+      try{
+        // System.out.println("" + this.session.getClass().getName());
+        // Class remappedGeyserSessionClass = Class.forName("Geyser-Spigot.jar//org.geysermc.geyser.session.GeyserSession");
+
+        // Method connectDownstreamFn = GeyserSession.class.getDeclaredMethod("connectDownstream");
+        // connectDownstreamFn.setAccessible(true);
+        // connectDownstreamFn.invoke(this.session);
+
+        // this.session.authenticate(this.session.getAuthData().name());
+        this.session.authenticate("ma27inranma");
+      }catch(Throwable t){
+        t.printStackTrace();
+      }
     }
 
     try{
