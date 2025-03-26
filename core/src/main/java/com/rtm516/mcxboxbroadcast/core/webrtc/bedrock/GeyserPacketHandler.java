@@ -53,6 +53,7 @@ import org.cloudburstmc.protocol.common.util.OptionalBoolean;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.network.GeyserBedrockPeer;
 import org.geysermc.geyser.network.GeyserServerInitializer;
+import org.geysermc.geyser.network.LoggingPacketHandler;
 import org.geysermc.geyser.network.UpstreamPacketHandler;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
@@ -208,7 +209,16 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
     }
 
     public PacketSignal handle(ClientToServerHandshakePacket packet) {
-        System.out.println("" + session.getAuthData());
+        UpstreamPacketHandler theirHandler = (UpstreamPacketHandler) session.getUpstream().getSession().getPacketHandler();
+
+        try{
+            Field theirSessionField = LoggingPacketHandler.class.getDeclaredField("session");
+            theirSessionField.setAccessible(true);
+
+            System.out.println("mine: " + session.getAuthData() + " theirs: " + ((GeyserSession) theirSessionField.get(theirHandler)).getAuthData()); // mine: null theirs: AuthData[name=ma27inranma, uuid=166ea9e6-7377-3544-b0b2-f44dec9633a1, xuid=2535461532856154]. HOW
+        }catch(Throwable t){
+            t.printStackTrace();
+        }
 
         sendPacketToGeyser(packet);
 
