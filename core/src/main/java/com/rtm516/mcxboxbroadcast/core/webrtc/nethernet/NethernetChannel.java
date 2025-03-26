@@ -136,6 +136,7 @@ public class NethernetChannel implements Channel {
 
   @Override
   public ChannelFuture close() {
+    this.disconnect();
     return null;
   }
 
@@ -234,8 +235,8 @@ public class NethernetChannel implements Channel {
         // connectDownstreamFn.setAccessible(true);
         // connectDownstreamFn.invoke(this.session);
 
-        // this.session.authenticate(this.session.getAuthData().name());
-        this.session.authenticate("ma27inranma");
+        this.session.authenticate(this.session.getAuthData().name());
+        // this.session.authenticate("ma27inranma");
       }catch(Throwable t){
         t.printStackTrace();
       }

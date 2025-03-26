@@ -79,7 +79,7 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
 
     @Override
     public void onDisconnect(String reason) {
-        // TODO
+        this.session.getUpstream().getSession().getPacketHandler().onDisconnect(reason);
     }
 
     private void disconnect(String message) {
