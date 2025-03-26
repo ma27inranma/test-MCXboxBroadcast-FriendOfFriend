@@ -1329,17 +1329,27 @@ public class GeyserPacketHandler implements BedrockPacketHandler {
         // BedrockServerSession session = new BedrockServerSession(peer, 0);
         NethernetBedrockServerSession session = new NethernetBedrockServerSession(peer, 0);
 
-        new GeyserServerInitializer(GeyserImpl.getInstance()).initSession(session);
+        new GeyserServerInitializer(GeyserImpl.getInstance()).initSession(session); // this creates GeyserSession automatically
+        try{
+            LoggingPacketHandler theirHandler = (LoggingPacketHandler) session.getPacketHandler();
 
-        GeyserSession geyserSession = new GeyserSession(GeyserImpl.getInstance(), session, eventLoop);
+            Field theirGeyserSessionField = LoggingPacketHandler.class.getDeclaredField("session");
+            theirGeyserSessionField.setAccessible(true);
+
+            this.session = (GeyserSession) theirGeyserSessionField.get(theirHandler);
+        }catch(Throwable t){
+            t.printStackTrace();
+        }
+
+        // GeyserSession geyserSession = new GeyserSession(GeyserImpl.getInstance(), session, eventLoop);
         // geyserSession.connect();
 
-        this.session = geyserSession;
+        // this.session = geyserSession;
 
-        channel.session = geyserSession; 
+        channel.session = this.session;
         channel.dataHandler = this.dataHandler;
 
-        GeyserImpl.getInstance().getSessionManager().addSession(UUID.randomUUID(), geyserSession);
+        GeyserImpl.getInstance().getSessionManager().addSession(UUID.randomUUID(), this.session);
 
         System.out.println("created!");
 
